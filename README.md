@@ -11,3 +11,17 @@ A General Purpose Input/Output (GPIO) pin is a versatile, programmable digital p
 
 ### How does GPIO Pin and Hardware PWM effectively communicate and control the Neopixels via the Raspberry Pi ?
 Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal. Any jitter or delay (even a few hundred nanoseconds) can cause the entire LED strip to glitch or ignore the signal. Thus, since GPIO Pins support Precise Timing Control, DMA, and is compatible with the rpi_ws281x library which uses DMA Protocol, GPIO Pin is widely used to control Neopixels as it ensures a solid data stream to the Neopixels.
+
+
+### Dependencies used in my project
+**Hardware**
+* Neopixel Strip(Ws2812-type LED)
+* Raspberry Pi 4 Model B
+* 13A to  USB-C x2
+
+**Software**
+* Visual Studio Code
+* RealVNC Viewer
+* GPIO Protocol
+* Pulse Width Modulation(PWM)
+* rpi_ws281x Library(LED Library for Raspberry Pi)

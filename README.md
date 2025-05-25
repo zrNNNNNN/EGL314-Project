@@ -24,4 +24,4 @@ Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal
 * RealVNC Viewer
 * GPIO Protocol
 * Pulse Width Modulation(PWM)
-* rpi_ws281x Library(LED Library for Raspberry Pi)
+* rpi_ws281x Library(LED Library for Raspberry Pia)

@@ -13,7 +13,7 @@ A General Purpose Input/Output (GPIO) pin is a versatile, programmable digital p
 Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal. Any jitter or delay (even a few hundred nanoseconds) can cause the entire LED strip to glitch or ignore the signal. Thus, since GPIO Pins support Precise Timing Control, DMA, and is compatible with the rpi_ws281x library which uses DMA Protocol, GPIO Pin is widely used to control Neopixels as it ensures a solid data stream to the Neopixels.
 
 
-### Dependencies used in my project
+### **Dependencies** used in my project
 **Hardware**
 * Neopixel Strip(Ws2812-type LED)
 * Raspberry Pi 4 Model B
@@ -24,4 +24,74 @@ Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal
 * RealVNC Viewer
 * GPIO Protocol
 * Pulse Width Modulation(PWM)
-* rpi_ws281x Library(LED Library for Raspberry Pia)
+* rpi_ws281x Library(LED Library for Raspberry Pi)
+
+**System Diagram**
+
+```mermaid
+graph LR
+A[13A Power Cable] --13A--> B[Raspberry Pi 4]
+C[Real VNC Viewer] --192.168.254.197--> B
+B --HDMI--> F[Monitor]
+B --GPIO--> G[Neopixel Strip]
+B --0V--> H[Neopixel Strip]
+
+```
+**Code Logic**
+
+When I run the code in Visual Studio Code, it fetches the relevant resources from the Raspberry Pi Neopixel Library(rpi_ws281x).
+
+When resources are fetched, it is then sent to the Raspberry Pi's Processor, which is then sent out to the Neopixel Strip connected to the GPIO18 via GPIO protocol.
+
+The Neopixel Strip will then receive the resources and comprehend it and execute the given resources, which will in turn make the Neopixel Strip change in colour according to the code.
+
+
+**My Code**
+```
+>   # 1. To Set Individual Pixels(Dimmed Brightness)
+    strip.setPixelColor(8, Color(50, 0, 50))   # Purple-ish(Dimmed)
+    time.sleep(2)
+
+    # 2. To Set Individual Pixels(Max Brightness)
+    strip.setPixelColor(9, Color(255, 0, 255)) # Purple(Max)
+    time.sleep(2)
+
+    # 3. Set All Pixels(Max Brightness)
+    set_all_pixels(strip, Color(0, 0, 255))# Blue(Max)
+    time.sleep(2)
+
+    # 4. Yellow (All Pixels)
+    set_all_pixels(strip, Color(255, 255, 0))  # Yellow
+    time.sleep(2)
+
+    # 5. Yellow (Individual Pixels)
+    strip.setPixelColor(10, Color(255, 255, 0))  # Yellow
+    time.sleep(2)
+
+    # 6. Color Changing Sequence(All Pixels)
+    set_all_pixels(strip, Color(255, 0, 0))  # Red
+    time.sleep(2)
+
+    set_all_pixels(strip, Color(0, 255, 0))  # Green
+    time.sleep(2)
+
+    set_all_pixels(strip, Color(0, 0, 255))  # Blue
+    time.sleep(2)
+
+    set_all_pixels(strip, Color(255, 255, 0))  # Yellow
+    time.sleep(2)
+
+    set_all_pixels(strip, Color(255, 255, 255))  # White
+    time.sleep(2)
+
+    # 7. Turn off (0 seconds)
+    turnOffLEDs(strip)
+
+    # 8. Rainbow fade (10 seconds)(All Pixels)
+    for j in range(256):
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, wheel((i + j) & 255))
+        strip.show()
+        time.sleep(10 / 256.0)
+
+

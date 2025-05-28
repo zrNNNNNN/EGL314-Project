@@ -27,6 +27,7 @@ Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal
 * GPIO Protocol
 * rpi_ws281x Library(LED Library for Raspberry Pi)
 * sudo ~/<venv_name>/bin/python jw.py
+* sudo usermod -a -G gpio (username)
 
 **System Diagram**
 
@@ -57,9 +58,60 @@ When resources are fetched, it is then sent to the Raspberry Pi's Processor, whi
 The Neopixel Strip will then receive the resources and comprehend it and execute the given resources, which will in turn make the Neopixel Strip change in colour according to the code.
 
 
-**My Code**
-```
->   # 1. To Set Individual Pixels(Dimmed Brightness)
+**My Initial Code**
+```     
+import time
+from rpi_ws281x import *
+
+# LED strip configuration:
+LED_COUNT = 300         # Number of LED pixels.
+LED_PIN = 18            # GPIO pin connected to the pixels (18 uses PWM).
+LED_FREQ_HZ = 800000    # LED signal frequency in hertz (usually 800kHz)
+LED_DMA = 10            # DMA channel to use for generating signal (try 10)
+LED_BRIGHTNESS = 255    # Overall strip brightness (0 to 255)
+LED_INVERT = False      # True to invert the signal (use only if needed)
+
+# Create NeoPixel object with appropriate configuration.
+strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+strip.begin()
+
+def setStaticWhite(strip, brightness=255):
+    """Set all LEDs to static white with a given brightness."""
+    color = Color(brightness, brightness, brightness)  # Simulate brightness via RGB values
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+    strip.show()
+
+def turnOffLEDs(strip):
+    """Turn off all LEDs."""
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, Color(0, 0, 0))
+    strip.show()
+
+def setRangeColor(strip, start, end, color):
+    """Set a range of pixels to the same color."""
+    for i in range(start, end):
+        strip.setPixelColor(i, color)
+    strip.show()
+
+def set_all_pixels(strip, color):
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+    strip.show()
+
+def wheel(pos):
+    """Generate rainbow colors across 0–255 positions."""
+    if pos < 85:
+        return Color(pos * 3, 255 - pos * 3, 0)
+    elif pos < 170:
+        pos -= 85
+        return Color(255 - pos * 3, 0, pos * 3)
+    else:
+        pos -= 170
+        return Color(0, pos * 3, 255 - pos * 3)
+
+# 1. To Set Individual Pixels(Dimmed Brightness)
+
     strip.setPixelColor(8, Color(50, 0, 50))   # Purple-ish(Dimmed)
     time.sleep(2)
 
@@ -79,7 +131,7 @@ The Neopixel Strip will then receive the resources and comprehend it and execute
     strip.setPixelColor(10, Color(255, 255, 0))  # Yellow
     time.sleep(2)
 
-    # 6. Color Changing Sequence(All Pixels)
+     # 6. Color Changing Sequence(All Pixels)
     set_all_pixels(strip, Color(255, 0, 0))  # Red
     time.sleep(2)
 
@@ -102,7 +154,11 @@ The Neopixel Strip will then receive the resources and comprehend it and execute
     for j in range(256):
         for i in range(strip.numPixels()):
             strip.setPixelColor(i, wheel((i + j) & 255))
-        strip.show()
-        time.sleep(10 / 256.0)
+            strip.show()
+            time.sleep(10 / 256.0)
+
+        
+        
+       
 
 

@@ -22,22 +22,33 @@ Since NeoPixels (WS2812-type LEDs) require very strict timing on the data signal
 **Software**
 * Visual Studio Code
 * RealVNC Viewer
+
+**Python Packages**
 * GPIO Protocol
-* Pulse Width Modulation(PWM)
 * rpi_ws281x Library(LED Library for Raspberry Pi)
+* sudo ~/<venv_name>/bin/python jw.py
 
 **System Diagram**
 
 ```mermaid
 graph LR
-A[13A Power Cable] --13A--> B[Raspberry Pi 4]
+A[5V Power Cable] --5V--> B[Raspberry Pi 4]
 C[Real VNC Viewer] --192.168.254.197--> B
 B --HDMI--> F[Monitor]
-B --GPIO--> G[Neopixel Strip]
-B --0V--> H[Neopixel Strip]
+B --5V--> G[Neopixel Strip]
+B --GND--> G[Neopixel Strip]
+B --Jumper Wire--> G[Neopixel Strip]
+D[External Power Supply] --5V--> G[Neopixel Strip]
 
 ```
 **Code Logic**
+```mermaid
+graph LR
+
+A[Visual Studio Code] --rpi_ws281xx--> B[Raspberry Pi 4]
+B[Raspberry Pi 4] --GPIO Protocol--> C[Neopixel Strip]
+
+```
 
 When I run the code in Visual Studio Code, it fetches the relevant resources from the Raspberry Pi Neopixel Library(rpi_ws281x).
 

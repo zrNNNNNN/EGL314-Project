@@ -44,28 +44,72 @@ D[External Power Supply] --5V--> G[Neopixel Strip]
 ```
 **Code Logic**
 ```mermaid
-graph LR
+mindmap
+  root((jw.py - Main Music & Neopixel Controller File))
 
-A[Visual Studio Code] --rpi_ws281xx--> B[Raspberry Pi 4]
-B[Raspberry Pi 4] --GPIO Protocol--> C[Neopixel Strip]
+    Reaper Control via OSC
+      Send Commands
+        /play
+        /stop
+      OSC Client Setup
+        IP: Laptop
+        Port: Reaper OSC Port
+    NeoPixel Control
+      Initialise Strip
+        GPIO Pin
+        LED Count
+        Brightness
+      Update LEDs
+        Based on music state
+        Based on time/event triggers
+
+    Event Loop
+      Listen for OSC replies
+      Update LED animation
+      Sync animations with Reaper playback
+
+    Config & Setup
+      Load settings
+        IP, Ports
+        LED config
 
 ```
 
-When I run the code in Visual Studio Code, it fetches the relevant resources from the Raspberry Pi Neopixel Library(rpi_ws281x).
-
-When resources are fetched, it is then sent to the Raspberry Pi's Processor, which is then sent out to the Neopixel Strip connected to the GPIO18 via GPIO protocol.
-
-The Neopixel Strip will then receive the resources and comprehend it and execute the given resources, which will in turn make the Neopixel Strip change in colour according to the code.
 
 
-**My Initial Code**
-```     
+
+**My Final Code with 30 Second Music**
+```    
 import time
+import random
 from rpi_ws281x import *
+from pythonosc import udp_client
+
+def send_message(receiver_ip, receiver_port, address, message):
+	try:
+		# Create an OSC client to send messages
+		client = udp_client.SimpleUDPClient(receiver_ip, receiver_port)
+
+		# Send an OSC message to the receiver
+		client.send_message(address, message)
+
+		print("Message sent successfully.")
+	except:
+		print("Message not sent")
+
+# FOR INFO: IP address and port of the receiving Raspberry Pi
+PI_A_ADDR = "192.168.254.74"		# wlan ip
+PORT = 8000
+
+addr = "/action/40044" # Play/Stop Function in Reaper
+msg = float(1) # Trigger TRUE Value
+
+send_message(PI_A_ADDR, PORT, addr, msg)
+
 
 # LED strip configuration:
-LED_COUNT = 300         # Number of LED pixels.
-LED_PIN = 18            # GPIO pin connected to the pixels (18 uses PWM).
+LED_COUNT = 100       # Number of LED pixels.
+LED_PIN = 12            # GPIO pin connected to the pixels (18 uses PWM).
 LED_FREQ_HZ = 800000    # LED signal frequency in hertz (usually 800kHz)
 LED_DMA = 10            # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 255    # Overall strip brightness (0 to 255)
@@ -74,6 +118,7 @@ LED_INVERT = False      # True to invert the signal (use only if needed)
 # Create NeoPixel object with appropriate configuration.
 strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 strip.begin()
+
 
 def setStaticWhite(strip, brightness=255):
     """Set all LEDs to static white with a given brightness."""
@@ -110,52 +155,90 @@ def wheel(pos):
         pos -= 170
         return Color(0, pos * 3, 255 - pos * 3)
 
-# 1. To Set Individual Pixels(Dimmed Brightness)
+def flicker_torches(strip, duration=5):
+    """Simulate torch flickering with warm tones (5 seconds)."""
+    end_time = time.time() + duration
+    while time.time() < end_time:
+        for i in range(strip.numPixels()):
+            r = random.randint(100, 180)
+            g = random.randint(40, 90)
+            b = 0
+            strip.setPixelColor(i, Color(r, g, b))
+        strip.show()
+        time.sleep(random.uniform(0.05, 0.15))
 
-    strip.setPixelColor(8, Color(50, 0, 50))   # Purple-ish(Dimmed)
-    time.sleep(2)
+def calm_pulse(strip, duration=3):
+    """Pulse soft golden light (3 seconds)."""
+    steps = 50
+    for cycle in range(int(duration * 2)):
+        for i in range(steps):
+            intensity = int((1 - abs((i / (steps / 2)) - 1)) * 255)
+            r = intensity
+            g = intensity // 2
+            b = 0
+            color = Color(r, g, b)
+            for j in range(strip.numPixels()):
+                strip.setPixelColor(j, color)
+            strip.show()
+            time.sleep(0.03)
 
-    # 2. To Set Individual Pixels(Max Brightness)
-    strip.setPixelColor(9, Color(255, 0, 255)) # Purple(Max)
-    time.sleep(2)
+def color_pulse(strip, color, pulse_count=3, interval=1):
+    """Pulse a solid color on and off."""
+    for _ in range(pulse_count):
+        set_all_pixels(strip, color)
+        time.sleep(interval / 2)
+        turnOffLEDs(strip)
+        time.sleep(interval / 2)
 
-    # 3. Set All Pixels(Max Brightness)
-    set_all_pixels(strip, Color(0, 0, 255))# Blue(Max)
-    time.sleep(2)
+def chase(strip, color, delay=0.05, loops=2):
+    """Chase effect: one bright pixel moving down the strip."""
+    for _ in range(loops):
+        for i in range(strip.numPixels()):
+            turnOffLEDs(strip)
+            strip.setPixelColor(i, color)
+            strip.show()
+            time.sleep(delay)
 
-    # 4. Yellow (All Pixels)
-    set_all_pixels(strip, Color(255, 255, 0))  # Yellow
-    time.sleep(2)
+def alternate_flash(strip, color1, color2, flashes=3, interval=1):
+    """Alternate two full-strip colors."""
+    for _ in range(flashes):
+        set_all_pixels(strip, color1)
+        time.sleep(interval / 2)
+        set_all_pixels(strip, color2)
+        time.sleep(interval / 2)
 
-    # 5. Yellow (Individual Pixels)
-    strip.setPixelColor(10, Color(255, 255, 0))  # Yellow
-    time.sleep(2)
+def fade_out_white(strip, steps=20, duration=2):
+    """Fade from white to black."""
+    for i in range(steps, -1, -1):
+        brightness = int(255 * i / steps)
+        set_all_pixels(strip, Color(brightness, brightness, brightness))
+        time.sleep(duration / steps)
 
-     # 6. Color Changing Sequence(All Pixels)
-    set_all_pixels(strip, Color(255, 0, 0))  # Red
-    time.sleep(2)
+ 
+try:
+    setStaticWhite(strip)
+    flicker_torches(strip, 4)        # 🔥 Flickering firelight
+    calm_pulse(strip, 2)             # ✨ Soft pulse of sacred energy
+    color_pulse(strip, Color(255, 0, 0), pulse_count=2, interval=1)  # 10-11s Red Pulse x2 2s Duration
+    color_pulse(strip, Color(0, 255, 0), pulse_count=2, interval=1)  # 12-13s Green Pulse x2 2s Duration
+    color_pulse(strip, Color(0, 0, 255), pulse_count=2, interval=1)  # 14-15s Blue Pulse x2 2s Duration
+    chase(strip, Color(0, 255, 0), delay=0.01, loops=1)  # 16-17s Chase 1s Duration
+    chase(strip, Color(255, 165, 0), delay=0.01, loops=1)  # 18-19s Chase 1s Duration
+    chase(strip, Color(128, 0, 128), delay=0.01, loops=1)  # 18-19s Chase 1s Duration
+    alternate_flash(strip, Color(128, 0, 0), Color(0, 0, 128), flashes=3, interval=1)  # 20-24s Red & Navy Blue Flashes 5s Duration
+    setRangeColor(strip, 0, 100, Color(255,255,255))
+    fade_out_white(strip, steps=20, duration=4)  # 29-30s Fade Out from White to Black 2s Duration
+    turnOffLEDs(strip)
+    
 
-    set_all_pixels(strip, Color(0, 255, 0))  # Green
-    time.sleep(2)
 
-    set_all_pixels(strip, Color(0, 0, 255))  # Blue
-    time.sleep(2)
 
-    set_all_pixels(strip, Color(255, 255, 0))  # Yellow
-    time.sleep(2)
 
-    set_all_pixels(strip, Color(255, 255, 255))  # White
-    time.sleep(2)
-
-    # 7. Turn off (0 seconds)
+    while True:
+        pass
+except KeyboardInterrupt:
     turnOffLEDs(strip)
 
-    # 8. Rainbow fade (10 seconds)(All Pixels)
-    for j in range(256):
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, wheel((i + j) & 255))
-            strip.show()
-            time.sleep(10 / 256.0)
 
         
         
